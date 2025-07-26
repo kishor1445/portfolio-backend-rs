@@ -27,12 +27,12 @@ struct GoogleUser {
     picture: String,
 }
 
-#[derive(Serialize)]
-struct Claims {
-    email: String,
-    name: String,
-    picture: String,
-    exp: usize,
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Claims {
+    pub email: String,
+    pub name: String,
+    pub picture: String,
+    pub exp: usize,
 }
 
 #[derive(Serialize)]

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, Serializer, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use surrealdb::sql::Thing;
 
 #[derive(Debug, Clone)]
@@ -26,6 +26,7 @@ impl Serialize for RecordIdReturn {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct About {
     pub id: Option<RecordIdReturn>,
+    pub domain: String,
     pub name: String,
     pub headline: String,
     pub description: String,
@@ -114,4 +115,13 @@ pub struct SpokenLanguage {
     pub id: Option<RecordIdReturn>,
     pub name: String,
     pub proficiency: ProficiencyLevel,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TechStack {
+    pub id: Option<RecordIdReturn>,
+    pub name: String,
+    pub description: Option<String>,
+    pub logo: Option<String>,
+    pub tags: Vec<String>,
 }

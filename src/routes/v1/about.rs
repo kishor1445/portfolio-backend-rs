@@ -1,8 +1,7 @@
-use crate::{error::APIError, models::about::Education};
-use crate::models::about::{About, Certificate, Contact, ProgLanguage, SpokenLanguage};
+use crate::{error::APIError, models::about::Education, auth::user::AuthenticatedUser};
+use crate::models::about::{About, Certificate, Contact, ProgLanguage, SpokenLanguage, TechStack};
 use crate::services::about_service;
 use actix_web::{HttpResponse, Result, delete, get, post, put, web};
-use uuid::Uuid;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
     cfg.service(get_all_about)
@@ -14,30 +13,27 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         .service(get_certificate)
         .service(get_programming_languages)
         .service(get_spoken_languages)
-        .service(get_tech_stacks);
-}
-
-pub fn protected_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_about)
-        .service(put_about)
-        .service(delete_about)
+        .service(get_tech_stacks)
+        .service(create_about)
         .service(create_education)
-        .service(put_education)
-        .service(delete_education)
         .service(create_contact)
-        .service(put_contact)
-        .service(delete_contact)
         .service(create_certificate)
-        .service(put_certificate)
-        .service(delete_certificate)
         .service(create_programming_language)
-        .service(put_programming_language)
-        .service(delete_programming_language)
         .service(create_spoken_language)
-        .service(put_spoken_language)
-        .service(delete_spoken_language)
         .service(create_tech_stack)
+        .service(put_about)
+        .service(put_education)
+        .service(put_contact)
+        .service(put_certificate)
+        .service(put_programming_language)
+        .service(put_spoken_language)
         .service(put_tech_stack)
+        .service(delete_about)
+        .service(delete_education)
+        .service(delete_contact)
+        .service(delete_certificate)
+        .service(delete_programming_language)
+        .service(delete_spoken_language)
         .service(delete_tech_stack);
 }
 
@@ -45,9 +41,6 @@ pub fn protected_routes(cfg: &mut web::ServiceConfig) {
 #[get("/about/all")]
 async fn get_all_about() -> Result<HttpResponse, APIError> {
     let abouts = about_service::get_all_about().await?;
-    if abouts.is_empty() {
-        return Err(APIError::NotFound);
-    }
     Ok(HttpResponse::Ok().json(abouts))
 }
 
@@ -57,20 +50,20 @@ async fn get_about(id: web::Path<String>) -> Result<HttpResponse, APIError> {
     Ok(HttpResponse::Ok().json(about))
 }
 
-#[post("/about/{id}")]
-async fn create_about(id: web::Path<String>, payload: web::Json<About>) -> Result<HttpResponse, APIError> {
-    let about = about_service::create_about(&id, payload.into_inner()).await?;
+#[post("/about")]
+async fn create_about(_user: AuthenticatedUser, payload: web::Json<About>) -> Result<HttpResponse, APIError> {
+    let about = about_service::create_about(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(about))
 }
 
 #[put("/about/{id}")]
-async fn put_about(id: web::Path<String>, payload: web::Json<About>) -> Result<HttpResponse, APIError> {
+async fn put_about(_user: AuthenticatedUser, id: web::Path<String>, payload: web::Json<About>) -> Result<HttpResponse, APIError> {
     let updated_about = about_service::update_about( &id, payload.into_inner()).await?;
     Ok(HttpResponse::Ok().json(updated_about))
 }
 
 #[delete("/about/{id}")]
-async fn delete_about(id: web::Path<String>) -> Result<HttpResponse, APIError> {
+async fn delete_about(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_about(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -82,19 +75,21 @@ async fn get_all_education() -> Result<HttpResponse, APIError> {
 }
 
 #[post("/education")]
-async fn create_education(payload: web::Json<Education>) -> Result<HttpResponse, APIError> {
+async fn create_education(_user: AuthenticatedUser, payload: web::Json<Education>) -> Result<HttpResponse, APIError> {
     let education = about_service::create_education(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(education))
 }
+
 #[get("/education/{id}")]
-async fn get_education(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn get_education(id: web::Path<String>) -> Result<HttpResponse, APIError> {
     let education = about_service::get_education(&id).await?;
     Ok(HttpResponse::Ok().json(education))
 }
 
 #[put("/education/{id}")]
 async fn put_education(
-    id: web::Path<Uuid>,
+    _user: AuthenticatedUser,
+    id: web::Path<String>,
     payload: web::Json<Education>,
 ) -> Result<HttpResponse, APIError> {
     let updated_education = about_service::update_education(&id, payload.into_inner()).await?;
@@ -102,7 +97,7 @@ async fn put_education(
 }
 
 #[delete("/education/{id}")]
-async fn delete_education(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn delete_education(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_education(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -114,19 +109,19 @@ async fn get_contact() -> Result<HttpResponse, APIError> {
 }
 
 #[post("/contact")]
-async fn create_contact(payload: web::Json<Contact>) -> Result<HttpResponse, APIError> {
+async fn create_contact(_user: AuthenticatedUser, payload: web::Json<Contact>) -> Result<HttpResponse, APIError> {
     let contact = about_service::create_contact(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(contact))
 }
 
 #[put("/contact")]
-async fn put_contact(payload: web::Json<Contact>) -> Result<HttpResponse, APIError> {
+async fn put_contact(_user: AuthenticatedUser, payload: web::Json<Contact>) -> Result<HttpResponse, APIError> {
     let updated_contact = about_service::update_contact(payload.into_inner()).await?;
     Ok(HttpResponse::Ok().json(updated_contact))
 }
 
 #[delete("/contact")]
-async fn delete_contact() -> Result<HttpResponse, APIError> {
+async fn delete_contact(_user: AuthenticatedUser) -> Result<HttpResponse, APIError> {
     about_service::delete_contact().await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -138,20 +133,21 @@ async fn get_all_certificates() -> Result<HttpResponse, APIError> {
 }
 
 #[get("/certificates/{id}")]
-async fn get_certificate(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn get_certificate(id: web::Path<String>) -> Result<HttpResponse, APIError> {
     let certificate = about_service::get_certificate(&id).await?;
     Ok(HttpResponse::Ok().json(certificate))
 }
 
 #[post("/certificates")]
-async fn create_certificate(payload: web::Json<Certificate>) -> Result<HttpResponse, APIError> {
+async fn create_certificate(_user: AuthenticatedUser, payload: web::Json<Certificate>) -> Result<HttpResponse, APIError> {
     let certificate = about_service::create_certificate(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(certificate))
 }
 
 #[put("/certificates/{id}")]
 async fn put_certificate(
-    id: web::Path<Uuid>,
+    _user: AuthenticatedUser,
+    id: web::Path<String>,
     payload: web::Json<Certificate>,
 ) -> Result<HttpResponse, APIError> {
     let updated_certificate = about_service::update_certificate(&id, payload.into_inner()).await?;
@@ -159,7 +155,7 @@ async fn put_certificate(
 }
 
 #[delete("/certificates/{id}")]
-async fn delete_certificate(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn delete_certificate(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_certificate(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -171,14 +167,15 @@ async fn get_programming_languages() -> Result<HttpResponse, APIError> {
 }
 
 #[post("/programming-languages")]
-async fn create_programming_language(payload: web::Json<ProgLanguage>) -> Result<HttpResponse, APIError> {
+async fn create_programming_language(_user: AuthenticatedUser, payload: web::Json<ProgLanguage>) -> Result<HttpResponse, APIError> {
     let language = about_service::create_programming_language(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(language))
 }
 
 #[put("/programming-languages/{id}")]
 async fn put_programming_language(
-    id: web::Path<Uuid>,
+    _user: AuthenticatedUser,
+    id: web::Path<String>,
     payload: web::Json<ProgLanguage>,
 ) -> Result<HttpResponse, APIError> {
     let updated_language = about_service::update_programming_language(&id, payload.into_inner()).await?;
@@ -186,7 +183,7 @@ async fn put_programming_language(
 }
 
 #[delete("/programming-languages/{id}")]
-async fn delete_programming_language(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn delete_programming_language(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_programming_language(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -198,14 +195,15 @@ async fn get_spoken_languages() -> Result<HttpResponse, APIError> {
 }
 
 #[post("/spoken-languages")]
-async fn create_spoken_language(payload: web::Json<SpokenLanguage>) -> Result<HttpResponse, APIError> {
+async fn create_spoken_language(_user: AuthenticatedUser, payload: web::Json<SpokenLanguage>) -> Result<HttpResponse, APIError> {
     let language = about_service::create_spoken_language(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(language))
 }
 
 #[put("/spoken-languages/{id}")]
 async fn put_spoken_language(
-    id: web::Path<Uuid>,
+    _user: AuthenticatedUser,
+    id: web::Path<String>,
     payload: web::Json<SpokenLanguage>,
 ) -> Result<HttpResponse, APIError> {
     let updated_language = about_service::update_spoken_language(&id, payload.into_inner()).await?;
@@ -213,7 +211,7 @@ async fn put_spoken_language(
 }
 
 #[delete("/spoken-languages/{id}")]
-async fn delete_spoken_language(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn delete_spoken_language(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_spoken_language(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
@@ -225,22 +223,23 @@ async fn get_tech_stacks() -> Result<HttpResponse, APIError> {
 }
 
 #[post("/tech-stacks")]
-async fn create_tech_stack(payload: web::Json<String>) -> Result<HttpResponse, APIError> {
+async fn create_tech_stack(_user: AuthenticatedUser, payload: web::Json<TechStack>) -> Result<HttpResponse, APIError> {
     let tech_stack = about_service::create_tech_stack(payload.into_inner()).await?;
     Ok(HttpResponse::Created().json(tech_stack))
 }
 
 #[put("/tech-stacks/{id}")]
 async fn put_tech_stack(
-    id: web::Path<Uuid>,
-    payload: web::Json<String>,
+    _user: AuthenticatedUser,
+    id: web::Path<String>,
+    payload: web::Json<TechStack>,
 ) -> Result<HttpResponse, APIError> {
     let updated_tech_stack = about_service::update_tech_stack(&id, payload.into_inner()).await?;
     Ok(HttpResponse::Ok().json(updated_tech_stack))
 }
 
 #[delete("/tech-stacks/{id}")]
-async fn delete_tech_stack(id: web::Path<Uuid>) -> Result<HttpResponse, APIError> {
+async fn delete_tech_stack(_user: AuthenticatedUser, id: web::Path<String>) -> Result<HttpResponse, APIError> {
     about_service::delete_tech_stack(&id).await?;
     Ok(HttpResponse::NoContent().finish())
 }
